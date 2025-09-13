@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CUBOi OneGrid v8.11_AF (OFICIAL) — Multiperfil</title>
+<style>
+:root{--bg:#0b0b0d;--panel:#121217;--panel2:#181922;--ink:#eaeaf2;--muted:#a6adbb;--b:#2a2f3a;--accent:#7c3aed;--ok:#10b981;--warn:#f59e0b;--bad:#ef4444}
+.theme-light{--bg:#f7f7f7;--panel:#ffffff;--panel2:#f1f1f4;--ink:#0f1115;--muted:#586175;--b:#cfd3df}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,Inter,Segoe UI,Roboto,Arial,sans-serif;margin:14px}
+h1{margin:0 0 6px;font-size:20px}
+h2{margin:12px 0 6px;font-size:14px;color:var(--muted);font-weight:600}
+select,input,button{background:var(--panel);color:var(--ink);border:1px solid var(--b);border-radius:10px;padding:8px 10px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;cursor:pointer}
+button.toggle{background:var(--panel2)}
+button.toggle.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+.muted{color:var(--muted);font-size:12px}
+header{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.toolbar,.addform{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin:10px 0}
+.kpi{background:var(--panel);border-radius:12px;padding:10px;text-align:center}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.compact .board{grid-template-columns:1fr}
+.column{background:var(--panel);border-radius:12px;min-height:280px;padding:10px}
+.column h3{margin:0 0 6px}
+.card{background:var(--panel2);border:1px solid #2b2f3a;border-left:6px solid var(--ok);border-radius:12px;padding:10px;margin-bottom:10px}
+.prio-U{border-left-color:var(--bad)}.prio-N{border-left-color:var(--warn)}.prio-I{border-left-color:var(--ok)}
+.tag{display:inline-block;background:#222533;color:#cfd5e1;border-radius:6px;padding:2px 6px;margin:2px;font-size:12px}
+.tag.origen-GS{background:#1e3a8a}.tag.origen-TPO{background:#065f46}.tag.origen-Mixto{background:#5b21b6}
+.actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.actions button{font-size:12px;padding:4px 6px}
+.hidden{display:none}.archived{opacity:.55}
+.due-ok{color:var(--ok)}.due-warn{color:var(--warn)}.due-bad{color:var(--bad)}
+.eisen{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:10px}
+.compact .eisen{grid-template-columns:1fr}
+.quad{background:var(--panel);border-radius:12px;min-height:240px;padding:10px}
+.tablewrap{background:var(--panel);border-radius:12px;padding:10px;overflow:auto;max-height:480px}
+table{width:100%;border-collapse:collapse} th,td{border-bottom:1px solid var(--b);padding:6px 8px;font-size:12px}
+footer{margin-top:12px}
+:focus-visible{outline:2px solid #7c3aed; outline-offset:2px}
+input:focus,select:focus,button:focus{box-shadow:0 0 0 2px #7c3aed55}
+.hr{height:1px;background:var(--b);width:100%;margin:6px 0}
+.grow{flex:1 1 200px}
+
+/* Panel lateral de Archivadas */
+#drawer{position:fixed;top:0;right:-360px;width:340px;height:100vh;background:var(--panel2);border-left:1px solid var(--b);padding:12px;transition:right .25s ease;overflow:auto;z-index:50}
+#drawer.open{right:0}
+#drawer h3{margin-top:0}
+.drawer-card{background:var(--panel);border-radius:10px;padding:8px;margin-bottom:8px;border-left:4px solid #555}
+.drawer-actions{display:flex;gap:6px;margin-top:6px}
+</style>
+
+<style>
+#kpiAdvWrap{margin-top:6px}
+.kpi-adv{background:var(--panel);border-radius:12px;padding:8px 10px;margin:6px 6px 0 0;display:inline-block;border:1px solid #2a2f3a}
+.sla-badge{display:inline-block;font-size:11px;padding:2px 6px;border-radius:10px;margin-left:6px;border:1px solid rgba(255,255,255,.08)}
+.sla-ok{background:#e8f5e9;color:#1b5e20;border-color:#c8e6c9}
+.sla-soon{background:#fff8e1;color:#e65100;border-color:#ffecb3}
+.sla-today{background:#e3f2fd;color:#0d47a1;border-color:#bbdefb}
+.sla-late{background:#ffebee;color:#b71c1c;border-color:#ffcdd2}
+.wip-alert{background:#311b92;color:#fff;border-radius:10px;padding:4px 8px;margin-left:6px;border:1px solid #4527a0}
+.quick-tip{font-size:12px;opacity:.7;margin-left:8px}
+@media print{ .no-print{display:none !important} }
+</style>
+
+
+<style>
+/* Métricas ampliadas */
+#kpiAdvWrap2{margin-top:6px}
+.kpi-adv{background:var(--panel);border-radius:12px;padding:8px 10px;margin:6px 6px 0 0;display:inline-block;border:1px solid #2a2f3a}
+.kpi-bar{height:8px;border-radius:6px;background:#2a2f3a;overflow:hidden;margin-top:4px}
+.kpi-bar > span{display:block;height:100%}
+.kpi-u{background:#ff7043}
+.kpi-n{background:#ffd54f}
+.kpi-i{background:#64b5f6}
+
+/* Etiquetas en tarjetas */
+.tag{display:inline-block;font-size:11px;padding:2px 6px;border-radius:10px;margin:2px;border:1px solid rgba(255,255,255,.08);background:#1b2333;opacity:.9}
+
+/* Timeline (mini Gantt) */
+#timelineWrap{display:none;margin-top:14px;border:1px solid #2a2f3a;border-radius:12px;padding:10px}
+#timeScale{font-size:12px;opacity:.75;margin-bottom:6px}
+.time-row{display:flex;align-items:center;gap:8px;margin:6px 0}
+.time-label{min-width:180px;font-size:12px;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.time-bar{position:relative;height:14px;border-radius:8px;background:#2a2f3a;flex:1}
+.time-bar > span{position:absolute;top:0;bottom:0;border-radius:8px;background:#26a69a}
+.time-legend{font-size:11px;opacity:.7;margin-top:6px}
+@media print{ #timelineWrap,.no-print{display:none !important} }
+</style>
+
+</head>
+<body>
+  <header>
+    <div class="row">
+  <button id="btnImportJson" class="no-print" title="Importar respaldo JSON">Importar JSON</button>
+  <label class="no-print" style="margin-left:8px;">
+    <input id="impNoDup" type="checkbox" checked /> Evitar duplicados (título + fecha)
+  </label>
+  <input id="impJson" type="file" accept="application/json,.json" style="display:none" />
+
+  <button id="btnExportLog" class="no-print" title="Exportar bitácora">Exportar LOG</button>
+  <button id="btnToggleTimeline" class="no-print" title="Ver línea de tiempo">Línea de tiempo</button>
+
+  <button id="btnBackup" title="Respaldar JSON" class="no-print">Respaldar</button>
+  <button id="btnCSV" title="Exportar CSV (Excel)" class="no-print">Exportar CSV</button>
+  <button id="btnPDF" title="Exportar PDF (Imprimir)" class="no-print">Exportar PDF</button>
+  <button id="btnLog" title="Ver historial de actividad" class="no-print">Historial</button>
+
+      <h1>CUBOi OneGrid v8.11_AF (OFICIAL) — Multiperfil</h1>
+      <span class="muted">Corte: <span id="ts"></span></span>
+    </div>
+    <div class="row">
+      <button id="btnKanban" class="toggle active">Kanban</button>
+      <button id="btnEisen" class="toggle">Eisenhower</button>
+      <button id="btnCompacta" class="toggle">Compacta</button>
+      <button id="btnTheme">🌗 Tema</button>
+      <button id="btnCompact">🔳 Compactar vista</button>
+      <label class="muted"><input type="checkbox" id="autoArch"> Auto‑archivar al completar</label>
+      <button id="btnDrawer">🗂️ Archivadas</button>
+      <button id="btnClear" title="Borrar todas las tareas guardadas">🗑️ Limpiar datos</button>
+    </div>
+  </header>
+
+  <h2>Filtros globales</h2>
+  <div class="toolbar">
+    <label>Perfil
+      <select id="perfil"><option value="">Consolidado</option><option>GS</option><option>TPO</option><option>Mixto</option></select>
+    </label>
+    <label>Área <select id="fArea"><option value="">Todas</option></select></label>
+    <label>Subárea <select id="fSub" disabled><option value="">Todas</option></select></label>
+    <label>Prioridad
+      <select id="fPrio"><option value="">Todas</option><option value="U">Urgente</option><option value="N">Necesario</option><option value="I">Importante</option></select>
+    </label>
+    <label>Estado
+      <select id="fEstado"><option value="">Todos</option><option>Por hacer</option><option>En proceso</option><option>Completadas</option><option>No tendrá</option></select>
+    </label>
+    <label>Archivadas <select id="fArch"><option value="">Ocultas</option><option>Mostrar</option></select></label>
+    <input id="q" placeholder="Buscar actividad…" size="22">
+    <label>WIP EP <input id="wip" type="number" value="8" min="1" style="width:70px"></label>
+    <button id="reset">Limpiar filtros</button>
+    <button id="expJSON">JSON</button>
+    <button id="expCSV">CSV</button>
+    <button id="expICS" class="primary">ICS</button>
+  </div>
+
+  <div class="hr"></div>
+
+  <h2>Nueva actividad</h2>
+  <div class="addform" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0">
+    <select id="nOrigen" title="Perfil"><option>GS</option><option>TPO</option><option>Mixto</option></select>
+    <input id="nDesc" class="grow" placeholder="Descripción">
+    <input id="nResp" placeholder="Responsable">
+    <select id="nArea" title="Área"></select>
+    <select id="nSub" title="Subárea"></select>
+    <select id="nPrio" title="Prioridad"><option value="U">Urgente</option><option value="N">Necesario</option><option value="I">Importante</option></select>
+    <select id="nEstado" title="Estado"><option>Por hacer</option><option>En proceso</option><option>Completadas</option><option>No tendrá</option></select>
+    <input id="nIni" type="date" title="Inicio real">
+    <input id="nDue" type="date" title="Deadline">
+    <select id="nImpacto" title="Impacto esperado"></select>
+    <select id="tplSel" title="Plantillas guardadas"><option value="">— Plantillas —</option></select>
+<button id="delTpl" title="Borrar plantilla seleccionada">🗑 Borrar</button>
+<button id="delTplAll" title="Borrar todas las plantillas">🗑 Borrar todo</button>
+    <button id="nPlantilla">Aplicar plantilla</button>
+    <button id="saveTpl">💾 Guardar como plantilla</button>
+    <button id="add" class="primary">Agregar</button>
+  </div>
+  <p class="muted">Fechas: Inicio real y Deadline. El tablero calcula días restantes y aplica semáforo visual.</p>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section id="kanban">
+    <div class="board">
+      <div class="column" data-s="Por hacer"><h3>Por hacer</h3></div>
+      <div class="column" data-s="En proceso"><h3>En proceso <small id="epStat">(0/—)</small></h3></div>
+      <div class="column" data-s="Completadas"><h3>Completadas</h3></div>
+    </div>
+  </section>
+
+  <section id="eisen" class="hidden">
+    <div class="eisen">
+      <div class="quad" data-q="UI"><h3>Urgente + Importante</h3></div>
+      <div class="quad" data-q="INU"><h3>Importante, no urgente</h3></div>
+      <div class="quad" data-q="UNI"><h3>Urgente, no importante</h3></div>
+      <div class="quad" data-q="NINI"><h3>Ni urgente ni importante</h3></div>
+    </div>
+  </section>
+
+  <section id="compacta" class="hidden">
+    <div class="tablewrap">
+      <table id="tbl">
+        <thead><tr><th>ID</th><th>Origen</th><th>Descripción</th><th>Área→Subárea</th><th>Prio</th><th>Estado</th><th>Dead.</th><th>Días</th><th>Resp</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer class="muted">CUBOi OneGrid v8.11_AF (OFICIAL) · Persistencia local · Exportaciones · Vistas múltiples · Limpieza de datos · Plantillas personalizadas · Panel Archivadas</footer>
+
+<!-- Drawer Archivadas -->
+<aside id="drawer">
+  <h3>Archivadas</h3>
+  <div id="archList"></div>
+</aside>
+
+<script>
+const KEY="cuboi_v88_real_data";
+const KEY_TPL="cuboi_v88_real_tpl";
+const $=s=>document.querySelector(s);
+
+/* Catálogos */
+const AREAS={
+ "Administración":["Finanzas","Legal","Compras","Auditoría","Planeación","Tesorería","Procesos","Calidad","Control interno"],
+ "Operación":["Inventarios","Caducidades","Logística","Mantenimiento","Infraestructura","Compras técnicas","Seguridad","Control RPBI","Tecnologías"],
+ "Clínica":["Estomatología","Ortodoncia","Endodoncia","Cirugía","Imagenología","Atención primaria","Calidad clínica","Protocolos","Tecnovigilancia"],
+ "Ventas/Comercio":["Prospección","CRM","Fidelización","Seguimiento","Cotizaciones","Facturación","Canales","Postventa","KPIs comerciales"],
+ "Proveeduría":["Contratos","Insumos críticos","Evaluación proveedores","Compras","Cadena de suministro","Transporte","Almacén","Validación normativa","Negociación"],
+ "RRHH":["Reclutamiento","Capacitación","Desempeño","Sucesión","Cultura","Nómina","Clima laboral","Relaciones laborales","Seguridad laboral"],
+ "Marketing":["Branding","Comunicación","Digital Ads","Content Marketing","SEO/SEM","Redes Sociales","Eventos","Alianzas","Analytics/BI"]
+};
+const IMPACTOS={
+ "Administración":["Reducción de costos","Cumplimiento legal","Eficiencia de procesos","Visibilidad financiera","Riesgos controlados"],
+ "Operación":["Continuidad operativa","Reducción de mermas","Tiempos de ciclo","Disponibilidad de insumos","Cumplimiento logístico"],
+ "Clínica":["Calidad de atención","Seguridad del paciente","Cumplimiento normativo","Tiempos de consulta","Satisfacción del paciente"],
+ "Ventas/Comercio":["Ingresos","Apertura de clientes","Conversión de leads","Retención","Ticket promedio"],
+ "Proveeduría":["Ahorro en compras","Servicio proveedor","Stockout reducido","Optimización inventario","Cumplimiento contratos"],
+ "RRHH":["Cobertura vacantes","Capacitación efectiva","Clima organizacional","Cumplimiento laboral","Productividad por FTE"],
+ "Marketing":["Generación de demanda","Brand awareness","CAC esperado","Conversión campañas","Engagement orgánico"]
+};
+
+/* Utils */
+function daysTo(str){if(!str)return null; const t=new Date(); t.setHours(0,0,0,0); const dd=new Date(str); return Math.ceil((dd-t)/86400000)}
+function dueClass(str){const x=daysTo(str); if(x===null)return ""; if(x<=2)return"due-bad"; if(x<=7)return"due-warn"; return"due-ok"}
+function prioText(p){return p==="U"?"Urgente":p==="N"?"Necesario":"Importante"}
+
+/* Datos */
+let tasks=[], nextId=1, templates={};
+function load(){ try{ tasks = JSON.parse(localStorage.getItem(KEY)||"[]")||[] }catch(e){ tasks=[] }
+ if(!Array.isArray(tasks)) tasks=[];
+ nextId = tasks.reduce((m,t)=>Math.max(m,Number(t.ID||0)),0)+1;
+ try{ templates = JSON.parse(localStorage.getItem(KEY_TPL)||"{}")||{} }catch(e){ templates={} }
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(tasks)); localStorage.setItem(KEY_TPL, JSON.stringify(templates)); }catch(e){} }
+function clearAll(){ if(confirm("¿Eliminar todas las tareas guardadas?")){ localStorage.removeItem(KEY); tasks=[]; nextId=1; render(); }}
+
+/* Filtros + Render */
+function applyFilters(base){
+ const p=document.getElementById("perfil").value, a=document.getElementById("fArea").value, s=document.getElementById("fSub").value, pr=document.getElementById("fPrio").value, st=document.getElementById("fEstado").value, arch=document.getElementById("fArch").value, q=(document.getElementById("q").value||"").toLowerCase();
+ return base.filter(t=>(!p||t.Origen===p)&&(!a||t["Área"]===a)&&(!s||t["Subárea"]===s)&&(!pr||t.Prioridad===pr)&&(!st||t.Estado===st)&&((arch==="Mostrar")||t.Archivada!=="Sí")&&(!q||JSON.stringify(t).toLowerCase().includes(q)));
+}
+function renderKPIs(list){
+ const total=list.length, estados={}, prios={}; let urg2=0;
+ list.forEach(t=>{estados[t.Estado]=(estados[t.Estado]||0)+1; prios[t.Prioridad]=(prios[t.Prioridad]||0)+1; const dd=daysTo(t.Deadline); if(dd!==null&&dd<=2&&t.Estado!=="Completadas")urg2++;});
+ document.getElementById("kpis").innerHTML=`
+  <div class="kpi"><div>Total</div><strong>${total}</strong></div>
+  <div class="kpi"><div>Estados (PH/EP/C)</div><strong>${(estados["Por hacer"]||0)} / ${(estados["En proceso"]||0)} / ${(estados["Completadas"]||0)}</strong></div>
+  <div class="kpi"><div>Prio (U/N/I)</div><strong>${(prios["U"]||0)} / ${(prios["N"]||0)} / ${(prios["I"]||0)}</strong></div>
+  <div class="kpi"><div>Deadlines ≤2d</div><strong>${urg2}</strong></div>
+  <div class="kpi"><div>Perfil</div><strong>${document.getElementById("perfil").value||"Consolidado"}</strong></div>
+  <div class="kpi"><div>Archivadas</div><strong>${list.filter(t=>t.Archivada==="Sí").length}</strong></div>`;
+}
+function card(t){
+ const dd=daysTo(t.Deadline); const dueCls=dueClass(t.Deadline); const diasTxt=(dd===null)?"—":(dd+" días");
+ const div=document.createElement("div"); div.className="card prio-"+t.Prioridad+(t.Archivada==="Sí"?" archived":"");
+ div.innerHTML=`
+  <div><strong>#${t.ID}</strong> — ${t.Descripción}</div>
+  <div class="muted"><span class="tag origen-${t.Origen}">${t.Origen}</span>
+  <span class="tag">${t["Área"]} → ${t["Subárea"]}</span>
+  <span class="tag">${prioText(t.Prioridad)}</span></div>
+  <div class="muted">Resp: ${t.Responsable||"—"} · Deadline: <span class="${dueCls}">${t.Deadline||"—"} (${diasTxt})</span></div>
+  <div class="muted">Impacto: ${t.Impacto||"—"}</div>
+  <div class="actions">
+    <button onclick="toEP(${t.ID})">Mover a EP</button>
+    <button onclick="toggleArch(${t.ID})">${t.Archivada==="Sí"?"Desarchivar":"Archivar"}</button>
+    <button onclick="complete(${t.ID})">✔ Completar</button>
+    <button onclick="delTask(${t.ID})" style="background:#2b0f14;border-color:#3a0f15;color:#ffd1d1">🗑️ Eliminar</button>
+    <button onclick="icsOne(${t.ID})">📆 .ics</button>
+  </div>`;
+ return div;
+}
+function renderKanban(list){
+ document.querySelectorAll(".column").forEach(c=>{c.innerHTML=`<h3>${c.querySelector("h3").textContent}</h3>`});
+ list.forEach(t=>{const col=document.querySelector(`.column[data-s="${t.Estado}"]`); if(col) col.appendChild(card(t));});
+ const limit=Number(document.getElementById("wip").value||0); const ep=list.filter(t=>t.Estado==="En proceso").length;
+ const epCol=document.querySelector('.column[data-s="En proceso"]'); epCol.style.boxShadow=(limit>0 && ep>limit)?"0 0 0 2px var(--bad) inset":"none";
+ document.getElementById("epStat").textContent=`(${ep}/${limit||"—"})`;
+}
+function renderEisen(list){
+ document.querySelectorAll(".quad").forEach(q=>{q.innerHTML=`<h3>${q.querySelector("h3").textContent}</h3>`});
+ list.forEach(t=>{
+  const key=(t.Prioridad==="U" && t.Estado!=="No tendrá")?"UI":(t.Prioridad==="I"?"INU":(t.Prioridad==="U"?"UNI":"NINI"));
+  const box=document.querySelector(`.quad[data-q="${key}"]`); if(box) box.appendChild(card(t));
+ });
+}
+function renderCompacta(list){
+ const tb=document.querySelector("#tbl tbody"); tb.innerHTML="";
+ list.forEach(t=>{const dd=daysTo(t.Deadline); const tr=document.createElement("tr");
+  tr.innerHTML=`<td>${t.ID}</td><td>${t.Origen}</td><td>${t.Descripción}</td><td>${t["Área"]} → ${t["Subárea"]}</td><td>${prioText(t.Prioridad)}</td><td>${t.Estado}</td><td>${t.Deadline||"—"}</td><td>${dd===null?"—":dd}</td><td>${t.Responsable||"—"}</td>`;
+  tb.appendChild(tr);
+ });
+}
+function renderDrawer(){
+ const cont=$("#archList"); cont.innerHTML="";
+ tasks.filter(t=>t.Archivada==="Sí").forEach(t=>{
+   const div=document.createElement("div"); div.className="drawer-card";
+   div.innerHTML=`<div><strong>#${t.ID}</strong> — ${t.Descripción}</div>
+   <div class="muted">${t["Área"]} → ${t["Subárea"]} · ${prioText(t.Prioridad)}</div>
+   <div class="drawer-actions">
+     <button onclick="toggleArch(${t.ID})">Desarchivar</button>
+     <button onclick="delTask(${t.ID})" style="background:#2b0f14;border-color:#3a0f15;color:#ffd1d1">🗑️ Eliminar</button>
+   </div>`;
+   cont.appendChild(div);
+ });
+}
+function render(){
+ const view=applyFilters(tasks);
+ renderKPIs(view);
+ if(!document.getElementById("kanban").classList.contains("hidden")) renderKanban(view);
+ if(!document.getElementById("eisen").classList.contains("hidden")) renderEisen(view);
+ if(!document.getElementById("compacta").classList.contains("hidden")) renderCompacta(view);
+ renderDrawer();
+ save();
+}
+
+/* Acciones */
+function toEP(id){const t=tasks.find(x=>x.ID===id); if(t){t.Estado="En proceso"; render();}}
+function complete(id){
+ const t=tasks.find(x=>x.ID===id); if(!t) return;
+ t.Estado="Completadas";
+ if (document.getElementById("autoArch").checked) t.Archivada="Sí";
+ render();
+}
+function delTask(id){
+ if(!confirm("¿Eliminar definitivamente la actividad #"+id+"?")) return;
+ const i=tasks.findIndex(x=>x.ID===id); if(i>=0){ tasks.splice(i,1); render(); }
+}
+function toggleArch(id){const t=tasks.find(x=>x.ID===id); if(t){t.Archivada = t.Archivada==="Sí"?"No":"Sí"; render();}}
+
+/* Export */
+function download(name, blob){const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();}
+function exportJSON(){download("cuboi_v88_real.json", new Blob([JSON.stringify(applyFilters(tasks),null,2)],{type:"application/json"}))}
+function exportCSV(){
+ const list=applyFilters(tasks);
+ const cols=["ID","Origen","Descripción","Área","Subárea","Prioridad","Estado","Impacto","Fecha inicio","Deadline","Responsable","Archivada"];
+ const head=cols.join(","), rows=list.map(t=>cols.map(c=>`"${(t[c]||"").toString().replace(/"/g,'""')}"`).join(",")).join("\n");
+ download("cuboi_v88_real.csv", new Blob([head+"\n"+rows],{type:"text/csv"}));
+}
+function buildICS(list){
+ const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//CUBOi OneGrid//v8.8 REAL//ES"];
+ list.forEach(t=>{
+  if(t.Deadline){
+    const d=t.Deadline.replace(/-/g,"");
+    lines.push("BEGIN:VEVENT","SUMMARY:"+t.Descripción,"DTSTART:"+d+"T090000","DTEND:"+d+"T093000","DESCRIPTION:"+t["Área"]+" → "+t["Subárea"],"END:VEVENT");
+  }
+ });
+ lines.push("END:VCALENDAR");
+ return lines.join("\n");
+}
+function exportICS(){download("cuboi_v88_real.ics", new Blob([buildICS(applyFilters(tasks))],{type:"text/calendar"}))}
+function icsOne(id){const t=tasks.find(x=>x.ID===id); if(!t||!t.Deadline){alert("La tarea no tiene deadline."); return;} download(`tarea_${id}.ics`, new Blob([buildICS([t])],{type:"text/calendar"}));}
+
+/* Helpers de UI */
+function setActive(btn){
+ document.querySelectorAll("button.toggle").forEach(b=>b.classList.remove("active"));
+ btn.classList.add("active");
+}
+function fillAreas(sel){ sel.innerHTML=""; Object.keys(AREAS).forEach(a=>sel.add(new Option(a,a))); }
+function fillSub(sel, area, includeAll=false){
+ sel.innerHTML=""; if(includeAll) sel.add(new Option("Todas",""));
+ (AREAS[area]||[]).forEach(s=>sel.add(new Option(s,s)));
+ sel.disabled = !(AREAS[area]&&AREAS[area].length);
+}
+function fillImpact(sel, area){ sel.innerHTML=""; (IMPACTOS[area]||[]).forEach(x=>sel.add(new Option(x,x))); }
+function loadTplSelect(){
+ const sel=document.getElementById("tplSel"); sel.innerHTML='<option value="">— Plantillas —</option>';
+ Object.keys(templates).forEach(k=>sel.add(new Option(k,k)));
+}
+
+/* Init */
+function init(){
+ document.getElementById("ts").textContent = new Date().toLocaleString();
+
+ // Filtros (Área→Subárea dinámico)
+ const fA=document.getElementById("fArea"), fS=document.getElementById("fSub"); fillAreas(fA);
+ fA.addEventListener("change",()=>{ fillSub(fS,fA.value,true); render(); });
+ fS.addEventListener("change",render);
+ ["perfil","fPrio","fEstado","fArch","q","wip"].forEach(id=>document.getElementById(id).addEventListener(id==="q"?"input":"change",render));
+ document.getElementById("reset").addEventListener("click",()=>{
+   ["perfil","fArea","fSub","fPrio","fEstado","fArch","q"].forEach(id=>{const el=document.getElementById(id); el.value="";});
+   fillSub(fS,"",true); render();
+ });
+
+ // Form Agregar (Área→Subárea dinámico) — sin duplicados
+ const nA=document.getElementById("nArea"), nS=document.getElementById("nSub"), nI=document.getElementById("nImpacto"); fillAreas(nA);
+ nA.addEventListener("change",()=>{ fillSub(nS,nA.value,false); fillImpact(nI,nA.value); });
+ nA.value="Administración"; fillSub(nS,nA.value,false); fillImpact(nI,nA.value);
+ document.getElementById("nPlantilla").addEventListener("click",()=>{
+   const key=document.getElementById("tplSel").value;
+   if(!key){ alert("Selecciona una plantilla en el menú '— Plantillas —'"); return; }
+   const p=templates[key]; if(!p){ alert("Plantilla no encontrada"); return; }
+   document.getElementById("nOrigen").value=p.Origen; document.getElementById("nDesc").value=p.Descripción; document.getElementById("nResp").value=p.Responsable||"";
+   document.getElementById("nArea").value=p["Área"]; fillSub(nS,p["Área"],false); document.getElementById("nSub").value=p["Subárea"];
+   document.getElementById("nPrio").value=p.Prioridad; document.getElementById("nEstado").value=p.Estado; document.getElementById("nImpacto").value=p.Impacto||"";
+ });
+ document.getElementById("saveTpl").addEventListener("click",()=>{
+   const nombre=prompt("Nombre de la plantilla:");
+   if(!nombre) return;
+   const tpl={Origen:document.getElementById("nOrigen").value, Descripción:document.getElementById("nDesc").value||"Actividad tipo",
+     Responsable:document.getElementById("nResp").value||"", "Área":document.getElementById("nArea").value, "Subárea":document.getElementById("nSub").value, Prioridad:document.getElementById("nPrio").value,
+     Estado:document.getElementById("nEstado").value, Impacto:document.getElementById("nImpacto").value||""};
+   templates[nombre]=tpl; loadTplSelect(); save(); alert("Plantilla guardada.");
+ });
+ document.getElementById("add").addEventListener("click",()=>{
+   const area=document.getElementById("nArea").value, sub=document.getElementById("nSub").value; if(!area||!sub){ alert("Selecciona Área y Subárea."); return; }
+   const t={ID:nextId++, Origen:document.getElementById("nOrigen").value, Descripción:(document.getElementById("nDesc").value||"Actividad"),
+     Responsable:(document.getElementById("nResp").value||"—"), "Área":area, "Subárea":sub, Prioridad:document.getElementById("nPrio").value,
+     Estado:document.getElementById("nEstado").value, Impacto:document.getElementById("nImpacto").value||"", "Fecha inicio":document.getElementById("nIni").value||"",
+     Deadline:document.getElementById("nDue").value||"", Archivada:"No"};
+   tasks.push(t); document.getElementById("nDesc").value=""; document.getElementById("nResp").value=""; render();
+ });
+
+ // Export
+ document.getElementById("expJSON").onclick=exportJSON; document.getElementById("expCSV").onclick=exportCSV; document.getElementById("expICS").onclick=exportICS;
+
+ // Vistas
+ document.getElementById("btnKanban").onclick=()=>{ setActive(document.getElementById("btnKanban")); document.getElementById("kanban").classList.remove("hidden"); document.getElementById("eisen").classList.add("hidden"); document.getElementById("compacta").classList.add("hidden"); render(); };
+ document.getElementById("btnEisen").onclick=()=>{ setActive(document.getElementById("btnEisen")); document.getElementById("kanban").classList.add("hidden"); document.getElementById("eisen").classList.remove("hidden"); document.getElementById("compacta").classList.add("hidden"); render(); };
+ document.getElementById("btnCompacta").onclick=()=>{ setActive(document.getElementById("btnCompacta")); document.getElementById("kanban").classList.add("hidden"); document.getElementById("eisen").classList.add("hidden"); document.getElementById("compacta").classList.remove("hidden"); render(); };
+ document.getElementById("btnTheme").onclick=()=>{ document.body.classList.toggle("theme-light"); };
+ document.getElementById("btnCompact").onclick=()=>{ document.body.classList.toggle("compact"); };
+ document.getElementById("btnDrawer").onclick=()=>{ document.getElementById("drawer").classList.toggle("open"); };
+ document.getElementById("btnClear").onclick=clearAll;
+
+ // Carga
+ load(); loadTplSelect(); render();
+}
+init();
+</script>
+
+<script>
+// Subáreas fijas por área (autorizadas)
+const AREAS_SUBAREAS = {"Comercio": ["GestiónProspección", "RelaciónClientes", "GestiónVentas", "DesarrolloMercado", "AlianzasEstratégicas", "ExpansiónCartera", "InteligenciaComercial", "Postventa"], "Clínica": ["GestiónAdmisión", "DiagnósticoIntegral", "PlanTerapéutico", "AtenciónIntegral", "SeguridadPaciente", "CalidadClínica", "InnovaciónClínica", "EvidenciaDigital"], "Administración": ["GestiónFinanciera", "PlaneaciónEstratégica", "GestiónRiesgos", "CumplimientoNormativo", "GestiónAuditoría", "GestiónJurídica", "GestiónFiscal", "ControlIndicadores"], "Operación": ["GestiónLogística", "InfraestructuraOperativa", "GestiónTecnología", "MantenimientoCrítico", "SeguridadOperativa", "GestiónProcesos", "ContinuidadServicio", "MonitoreoIntegral"], "Proveeduría": ["PlaneaciónAbasto", "GestiónCompras", "ContratosEstratégicos", "RelaciónProveedores", "EvaluaciónCalidad", "ControlInventarios", "DistribuciónSanitaria", "OptimizaciónCostos"], "RRHH": ["AtracciónTalento", "SelecciónProfesional", "Inducción", "CapacitaciónClínica", "DesarrolloTalento", "EvaluaciónDesempeño", "GestiónCompensación", "CulturaInstitucional"], "Marketing": ["EstrategiaMKT", "GestiónMarca", "ComunicaciónInstitucional", "MarketingDigital", "EventosAcadémicos", "DiseñoCorporativo", "GestiónCRM", "AnalíticaMKT"]};
+
+function actualizarSubareas(areaSelectId, subareaSelectId) {
+    const areaSel = document.getElementById(areaSelectId);
+    const subSel = document.getElementById(subareaSelectId);
+    subSel.innerHTML = "";
+    if (!areaSel || !subSel) return;
+    const area = areaSel.value;
+    if (AREAS_SUBAREAS[area]) {
+        AREAS_SUBAREAS[area].forEach(sa => {
+            const opt = document.createElement("option");
+            opt.value = sa;
+            opt.textContent = sa;
+            subSel.appendChild(opt);
+        });
+    }
+}
+
+// Enlazar cambios en selects de Nueva Actividad y Filtros
+window.addEventListener("DOMContentLoaded", () => {
+    const nArea = document.getElementById("nArea");
+    const nSub = document.getElementById("nSub");
+    if (nArea && nSub) {
+        nArea.addEventListener("change", () => actualizarSubareas("nArea", "nSub"));
+        actualizarSubareas("nArea", "nSub");
+    }
+    const fArea = document.getElementById("fArea");
+    const fSub = document.getElementById("fSub");
+    if (fArea && fSub) {
+        fArea.addEventListener("change", () => actualizarSubareas("fArea", "fSub"));
+        actualizarSubareas("fArea", "fSub");
+    }
+});
+</script>
+
+
+<script>
+(function(){
+  var cycle = ["", "M", "S", "C", "W"];
+  var labels = {"":"Todas","M":"Imprescindible","S":"Debería","C":"Podría","W":"No se hará"};
+  var btn = document.getElementById("btnMos");
+  var sel = document.getElementById("fMos");
+  if(!btn || !sel) return;
+  function sync(){
+    var val = sel.value || "";
+    btn.textContent = "Moscow" + (val ? " ("+labels[val]+")" : "");
+    if(val){ btn.classList.add("primary"); } else { btn.classList.remove("primary"); }
+  }
+  btn.addEventListener("click", function(){
+    var idx = cycle.indexOf(sel.value || "");
+    sel.value = cycle[(idx+1)%cycle.length];
+    try{ if(typeof render === "function") render(); }catch(e){}
+    sel.dispatchEvent(new Event("change"));
+    sync();
+  });
+  sel.addEventListener("change", sync);
+  sync();
+})();
+</script>
+
+
+<script>
+(function(){
+  const sel = document.getElementById("tplSel");
+  const btnDel = document.getElementById("delTpl");
+  const btnAll = document.getElementById("delTplAll");
+  if(sel && btnDel){
+    btnDel.addEventListener("click", function(){
+      const key = sel.value;
+      if(!key){ alert("Selecciona una plantilla para borrar."); return; }
+      if(!templates || !templates[key]){ alert("Plantilla no encontrada."); return; }
+      if(!confirm("¿Borrar la plantilla '"+key+"'?")) return;
+      try{ delete templates[key]; localStorage.setItem(KEY_TPL, JSON.stringify(templates)); }catch(e){}
+      if(typeof loadTplSelect === "function") loadTplSelect();
+      alert("Plantilla eliminada.");
+    });
+  }
+  if(sel && btnAll){
+    btnAll.addEventListener("click", function(){
+      if(!confirm("¿Borrar TODAS las plantillas? Esta acción no se puede deshacer.")) return;
+      try{ templates = {}; localStorage.removeItem(KEY_TPL); }catch(e){}
+      if(typeof loadTplSelect === "function") loadTplSelect();
+      alert("Todas las plantillas fueron eliminadas.");
+    });
+  }
+})();
+</script>
+
+
+<script>
+(function(){
+  const $ = (s,ctx)=> (ctx||document).querySelector(s);
+  const $$ = (s,ctx)=> Array.from((ctx||document).querySelectorAll(s));
+  const KEYS = { TASKS:'cuboi_v88_real_tasks', TPL:'cuboi_v88_real_tpl', BACKUP_AT:'cuboi_backup_last_at', LOG:'cuboi_activity_log' };
+
+  let tasks = window.tasks || [];
+  let templates = window.templates || {};
+  try{
+    if((!tasks || !tasks.length) && localStorage.getItem(KEYS.TASKS)){ tasks = JSON.parse(localStorage.getItem(KEYS.TASKS)||'[]'); }
+    if((!templates || !Object.keys(templates).length) && localStorage.getItem(KEYS.TPL)){ templates = JSON.parse(localStorage.getItem(KEYS.TPL)||'{}'); }
+  }catch(e){}
+
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function parseDate(d){ if(!d) return null; const t = Date.parse(d); return isNaN(t)?null:new Date(t); }
+  function daysDiff(a,b){ const ms = 24*60*60*1000; return Math.floor((a - b)/ms); }
+  function csvEscape(v){ if(v==null) return ''; const s=String(v).replace(/\r?\n/g,' '); return /[",;]/.test(s)?('"'+s.replace(/"/g,'""')+'"'):s; }
+  function currentList(){ try{ if(window._lastRenderedList) return window._lastRenderedList; }catch(e){} return (window.tasks || tasks || []); }
+  function ensureKpiWrap(){
+    if($('#kpiAdvWrap')) return;
+    const kpis = $('#kpis');
+    const wrap = document.createElement('div'); wrap.id='kpiAdvWrap';
+    if(kpis && kpis.parentNode){ kpis.parentNode.insertBefore(wrap, kpis.nextSibling); } else { document.body.insertBefore(wrap, document.body.firstChild); }
+  }
+
+  // Respaldo
+  function makeBackupBlob(){
+    const payload = { schema:'CUBOi-OneGrid-v8.12e', when:new Date().toISOString(), tasks:(window.tasks||tasks||[]), templates:(window.templates||templates||{}) };
+    return new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  }
+  function downloadBlob(blob, filename){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+  function autoBackupIfNeeded(){
+    try{
+      const last = localStorage.getItem(KEYS.BACKUP_AT); const now = Date.now(); const DAY = 86400000;
+      if(!last || (now - parseInt(last,10)) > DAY){
+        downloadBlob(makeBackupBlob(), 'CUBOi_Backup_'+todayStr()+'.json');
+        localStorage.setItem(KEYS.BACKUP_AT, String(now));
+      }
+    }catch(e){}
+  }
+
+  // Export
+  window.exportCSV = function(){
+    const list = currentList();
+    const headers = ['id','titulo','descripcion','origen','area','subarea','prio','estado','fecha','deadline','arch','recur'];
+    const rows = [headers.join(',')];
+    list.forEach(t=> rows.push(headers.map(h=>csvEscape(t[h])).join(',')));
+    downloadBlob(new Blob([rows.join('\\n')],{type:'text/csv'}),'CUBOi_Export_'+todayStr()+'.csv');
+  };
+  function exportPDF(){ window.print(); }
+
+  // KPIs + WIP
+  function renderKPIs(){
+    ensureKpiWrap();
+    const list = currentList();
+    const byArea = {}, wipByArea = {};
+    list.forEach(t=>{
+      if(!t) return;
+      byArea[t.area] = (byArea[t.area]||0)+1;
+      if((t.estado||'').toLowerCase().includes('curso')){ wipByArea[t.area] = (wipByArea[t.area]||0)+1; }
+    });
+    const WIP_LIMITS = window.WIP_LIMITS || {};
+    let html = '<div>';
+    html += '<span class="kpi-adv">Total: <b>'+list.length+'</b></span>';
+    Object.keys(byArea).sort().forEach(a=>{
+      const wip = wipByArea[a]||0; const lim = WIP_LIMITS[a];
+      const extra = (lim && wip>lim)?(' <span class="wip-alert">WIP '+wip+'/'+lim+'</span>') : '';
+      html += '<span class="kpi-adv">'+a+': <b>'+byArea[a]+'</b>'+extra+'</span>';
+    });
+    html += '</div>';
+    $('#kpiAdvWrap').innerHTML = html;
+  }
+
+  // Búsqueda avanzada
+  function parseQuery(q){
+    q = (q||'').trim();
+    const tokens = []; let m;
+    const re = /(\\w+):"([^"]+)"|(\\w+):(\\S+)|"([^"]+)"|(\\S+)/g;
+    while((m = re.exec(q))){
+      if(m[1]) tokens.push({k:m[1].toLowerCase(), v:m[2]});
+      else if(m[3]) tokens.push({k:m[3].toLowerCase(), v:m[4]});
+      else if(m[5]) tokens.push({k:'text', v:m[5]});
+      else if(m[6]) tokens.push({k:'text', v:m[6]});
+    }
+    return tokens;
+  }
+  function matchTaskAdv(t, tokens){
+    if(!tokens.length) return true;
+    const hay = (s)=> (s||'').toString().toLowerCase();
+    return tokens.every(tok=>{
+      const v = tok.v.toLowerCase();
+      switch(tok.k){
+        case 'area': return hay(t.area).includes(v);
+        case 'sub': case 'subarea': return hay(t.subarea).includes(v);
+        case 'prio': return hay(t.prio).includes(v);
+        case 'estado': return hay(t.estado).includes(v);
+        case 'origen': return hay(t.origen).includes(v);
+        case 'id': return (''+t.id).toLowerCase().includes(v);
+        case 'text': default:
+          return hay(t.titulo).includes(v) || hay(t.descripcion).includes(v);
+      }
+    });
+  }
+  function applyAdvancedSearch(){
+    const q = ($('#fBuscar')||{}).value || '';
+    const tokens = parseQuery(q);
+    $$('.card').forEach(function(c){
+      const id = c.getAttribute('data-id');
+      let t = null;
+      try{ t = (window.tasks||[]).find(x=> (''+x.id) === id); }catch(e){}
+      const ok = t ? matchTaskAdv(t, tokens) : true;
+      c.style.display = ok ? '' : 'none';
+    });
+  }
+
+  // Quick add + atajos
+  function focusNew(){ const ti = $('#nTitulo'); if(ti){ ti.focus(); ti.scrollIntoView({behavior:'smooth',block:'center'}); } }
+  document.addEventListener('keydown', function(ev){
+    if(ev.target && /input|textarea|select/i.test(ev.target.tagName)) return;
+    const k = ev.key.toLowerCase();
+    if(k==='q'){ ev.preventDefault(); focusNew(); }
+    if(k==='k'){ const btn=[...$$('button')].find(b=>/kanban/i.test(b.textContent)); if(btn){ ev.preventDefault(); btn.click(); } }
+    if(k==='e'){ const btn=[...$$('button')].find(b=>/eisen/i.test(b.textContent)); if(btn){ ev.preventDefault(); btn.click(); } }
+    if(k==='c'){ const btn=[...$$('button')].find(b=>/compacta|compact/i.test(b.textContent)); if(btn){ ev.preventDefault(); btn.click(); } }
+    if(k==='f'){ const inp=$('#fBuscar'); if(inp){ ev.preventDefault(); inp.focus(); } }
+  });
+
+  // SLA badges
+  function decorateSLA(){
+    const now = new Date(); const today = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    $$('.card').forEach(function(card){
+      const prev = card.querySelector('.sla-badge'); if(prev) prev.remove();
+      const id = card.getAttribute('data-id'); if(!id) return;
+      const arr = (window.tasks||tasks||[]);
+      const t = arr.find(x=> (''+x.id) === id);
+      if(!t || !t.deadline) return;
+      const d = parseDate(t.deadline); if(!d) return;
+      const dd = new Date(d.getFullYear(),d.getMonth(),d.getDate());
+      const delta = Math.floor((dd - today)/86400000);
+      let cls='', label='';
+      if(delta > 1){ cls='sla-ok'; label='D-'+delta; }
+      else if(delta === 1){ cls='sla-soon'; label='D-1'; }
+      else if(delta === 0){ cls='sla-today'; label='HOY'; }
+      else { cls='sla-late'; label='VENCIDA'; }
+      const small = card.querySelector('.small') || card;
+      const badge = document.createElement('span'); badge.className='sla-badge '+cls; badge.textContent=label;
+      small.appendChild(badge);
+    });
+  }
+  setInterval(decorateSLA, 60*1000);
+
+  // Recurrencias: guardar al crear y regenerar al completar
+  function addDays(dateStr, days){
+    const d = parseDate(dateStr) || new Date();
+    const nd = new Date(d.getTime() + days*86400000);
+    return nd.toISOString().slice(0,10);
+  }
+  if(typeof window.addTask === 'function'){
+    const _add = window.addTask;
+    window.addTask = function(){
+      const sel = document.getElementById('nRecur');
+      const recur = sel ? (sel.value||'') : '';
+      const before = (window.tasks||tasks||[]).length;
+      const res = _add.apply(this, arguments);
+      try{
+        const arr=(window.tasks||tasks);
+        if(arr && arr.length===before+1 && recur){
+          const t = arr[arr.length-1];
+          t.recur = recur;
+          if(typeof window.save==='function') window.save();
+          if(typeof window.render==='function') window.render();
+        }
+      }catch(e){}
+      return res;
+    };
+  }
+  if(typeof window.move === 'function'){
+    const _move = window.move;
+    window.move = function(id, estado){
+      const res = _move.apply(this, arguments);
+      try{
+        const arr=(window.tasks||tasks)||[];
+        const t = arr.find(x=> (''+x.id)===(''+id));
+        if(!t || !t.recur) return res;
+        const interval = t.recur==='W' ? 7 : (t.recur==='M' ? 30 : 0);
+        if(interval>0 && /hecho|completado/i.test(estado||t.estado||'')){
+          const copy = Object.assign({}, t);
+          copy.id = Date.now();
+          copy.fecha = addDays(t.fecha||todayStr(), interval);
+          if(t.deadline) copy.deadline = addDays(t.deadline, interval);
+          copy.estado = 'Por hacer';
+          (window.tasks||tasks).push(copy);
+          if(typeof window.save==='function') window.save();
+          if(typeof window.render==='function') window.render();
+        }
+      }catch(e){}
+      return res;
+    };
+  }
+
+  // Historial simple
+  let LOG=[]; try{ LOG=JSON.parse(localStorage.getItem(KEYS.LOG)||'[]'); }catch(e){ LOG=[]; }
+  if(typeof window.addTask==='function'){
+    const _add2=window.addTask;
+    window.addTask=function(){
+      const before=(window.tasks||tasks||[]).length;
+      const r=_add2.apply(this, arguments);
+      try{
+        const arr=(window.tasks||tasks);
+        if(arr && arr.length===before+1){
+          const t=arr[arr.length-1];
+          LOG.push({ts:new Date().toISOString(),evt:'create',payload:{id:t.id,titulo:t.titulo,area:t.area,subarea:t.subarea,prio:t.prio}});
+          localStorage.setItem(KEYS.LOG, JSON.stringify(LOG));
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+
+  // Botones
+  document.addEventListener('click', function(ev){
+    if(ev.target && ev.target.id==='btnBackup'){ downloadBlob(makeBackupBlob(), 'CUBOi_Backup_'+todayStr()+'.json'); }
+    if(ev.target && ev.target.id==='btnCSV'){ window.exportCSV(); }
+    if(ev.target && ev.target.id==='btnPDF'){ exportPDF(); }
+    if(ev.target && ev.target.id==='btnLog'){ alert('Historial en localStorage: '+(LOG.length||0)+' eventos.'); }
+  });
+
+  // Hook a render
+  (function(){
+    const _render = window.render;
+    window.render = function(){
+      const r = _render ? _render.apply(this, arguments) : undefined;
+      try{ if(window.applyFilters && window.tasks){ window._lastRenderedList = window.applyFilters(window.tasks.slice()); } }catch(e){}
+      try{ renderKPIs(); }catch(e){}
+      try{ applyAdvancedSearch(); }catch(e){}
+      try{ decorateSLA(); }catch(e){}
+      return r;
+    };
+  })();
+  const fBuscar = $('#fBuscar');
+  if(fBuscar){
+    fBuscar.addEventListener('input', function(){ try{ if(typeof window.render==='function') window.render(); }catch(e){} });
+  }
+
+  // Inicial
+  try{ autoBackupIfNeeded(); }catch(e){}
+  try{ if(typeof window.render==='function') window.render(); }catch(e){}
+})();
+</script>
+
+
+<script>
+(function(){
+  const $ = (s,ctx)=> (ctx||document).querySelector(s);
+  const $$ = (s,ctx)=> Array.from((ctx||document).querySelectorAll(s));
+  const KEYS = { TASKS:'cuboi_v88_real_tasks', LOG:'cuboi_activity_log' };
+
+  // Utilidades
+  function parseDate(d){ if(!d) return null; const t=Date.parse(d); return isNaN(t)?null:new Date(t); }
+  function daysBetween(a,b){ if(!a||!b) return null; const ms=86400000; const A=new Date(a.getFullYear(),a.getMonth(),a.getDate()); const B=new Date(b.getFullYear(),b.getMonth(),b.getDate()); return Math.round((B-A)/ms); }
+  function csvEscape(v){ if(v==null) return ''; const s=String(v).replace(/\r?\n/g,' '); return /[",;]/.test(s)?('"'+s.replace(/"/g,'""')+'"'):s; }
+
+  // ====== MÉTRICAS AMPLIADAS ======
+  function renderMetrics(){
+    const host = $("#kpiAdvWrap2"); if(!host) return;
+    const list = (window._lastRenderedList || window.tasks || []);
+    // Estatus
+    const total = list.length;
+    let po=0, ec=0, he=0;
+    const prio = {U:0,N:0,I:0};
+    const byResp = {}; // si existe campo t.responsable
+    list.forEach(t=>{
+      const e=(t.estado||'').toLowerCase();
+      if(/curso/.test(e)) ec++; else if(/hecho|complet/.test(e)) he++; else po++;
+      if(prio.hasOwnProperty(t.prio)) prio[t.prio]++;
+      if(t.responsable){ byResp[t.responsable]=(byResp[t.responsable]||0)+1; }
+    });
+    // Tiempo promedio de cierre
+    let sum=0, cnt=0;
+    list.forEach(t=>{
+      if(/hecho|complet/.test((t.estado||'').toLowerCase())){
+        const fi=parseDate(t.fecha), fd=parseDate(t.deadline) || parseDate(t.cierre) || null;
+        if(fi && fd){ const d=daysBetween(fi, fd); if(d!=null){ sum+=Math.max(d,0); cnt++; } }
+      }
+    });
+    const avg = cnt? (sum/cnt).toFixed(1) : '-';
+    // HTML
+    const pct = (n)=> total? ((n*100/total).toFixed(0)+'%'):'0%';
+    let html = '';
+    html += `<span class="kpi-adv">Por hacer: <b>${po}</b> (${pct(po)})</span>`;
+    html += `<span class="kpi-adv">En curso: <b>${ec}</b> (${pct(ec)})</span>`;
+    html += `<span class="kpi-adv">Hecho: <b>${he}</b> (${pct(he)})</span>`;
+    html += `<span class="kpi-adv">Tiempo prom. cierre: <b>${avg}</b> días</span>`;
+    // Barras de prioridades
+    const totalPrio = prio.U + prio.N + prio.I;
+    const uPct = totalPrio? (prio.U*100/totalPrio):0;
+    const nPct = totalPrio? (prio.N*100/totalPrio):0;
+    const iPct = totalPrio? (prio.I*100/totalPrio):0;
+    html += `<div class="kpi-adv" style="min-width:320px">Prioridades (U/N/I): ${prio.U}/${prio.N}/${prio.I}
+              <div class="kpi-bar">
+                <span class="kpi-u" style="width:${uPct}%"></span>
+              </div>
+              <div class="kpi-bar">
+                <span class="kpi-n" style="width:${nPct}%"></span>
+              </div>
+              <div class="kpi-bar">
+                <span class="kpi-i" style="width:${iPct}%"></span>
+              </div>
+            </div>`;
+    // Carga por responsable si hay campo
+    const resps = Object.keys(byResp);
+    if(resps.length){
+      html += `<div class="kpi-adv">Carga por responsable: ${resps.map(r=>`${r}: <b>${byResp[r]}</b>`).join(' · ')}</div>`;
+    }
+    host.innerHTML = html;
+  }
+
+  // ====== ETIQUETAS ======
+  function normalizeTags(s){
+    if(!s) return [];
+    // admite "#a, #b" o "#a #b" o "a, b"
+    const raw = s.replace(/#/g,' ').split(/[, ]+/).map(x=>x.trim()).filter(Boolean);
+    // lower-case único
+    const set = new Set(raw.map(x=>x.toLowerCase()));
+    return Array.from(set);
+  }
+  function refreshTagFilterOptions(){
+    const sel = $("#fTag"); if(!sel) return;
+    const all = (window.tasks||[]).flatMap(t=> (t.tags||[]));
+    const uniq = Array.from(new Set(all)).sort();
+    const current = sel.value || '';
+    sel.innerHTML = '<option value="">Todas</option>' + uniq.map(v=>`<option value="${v}">${v}</option>`).join('');
+    if(current && uniq.includes(current)) sel.value = current;
+  }
+  function renderTagsOnCards(){
+    $$('.card').forEach(card=>{
+      // remover previos
+      card.querySelectorAll('.tag').forEach(e=>e.remove());
+      const id = card.getAttribute('data-id'); if(!id) return;
+      const t = (window.tasks||[]).find(x=> (''+x.id)===id);
+      if(!t || !t.tags || !t.tags.length) return;
+      const small = card.querySelector('.small') || card;
+      t.tags.slice(0,6).forEach(tag=>{
+        const el = document.createElement('span'); el.className='tag'; el.textContent = '#'+tag;
+        small.appendChild(el);
+      });
+    });
+  }
+  function filterByTag(){
+    const sel = $("#fTag"); if(!sel) return;
+    const tag = sel.value || '';
+    $$('.card').forEach(card=>{
+      if(!tag){ card.style.display=''; return; }
+      const id = card.getAttribute('data-id');
+      const t = (window.tasks||[]).find(x=> (''+x.id)===id);
+      const ok = t && Array.isArray(t.tags) ? t.tags.includes(tag) : false;
+      card.style.display = ok ? '' : 'none';
+    });
+  }
+
+  // Hook a addTask para capturar etiquetas
+  if(typeof window.addTask === 'function'){
+    const _add = window.addTask;
+    window.addTask = function(){
+      const before = (window.tasks||[]).length;
+      const res = _add.apply(this, arguments);
+      try{
+        const arr = (window.tasks||[]);
+        if(arr && arr.length===before+1){
+          const t = arr[arr.length-1];
+          const tags = normalizeTags(($("#nTags")||{}).value||'');
+          if(tags.length) t.tags = tags;
+          if(typeof window.save==='function') window.save();
+          refreshTagFilterOptions();
+          if(typeof window.render==='function') window.render();
+        }
+      }catch(e){}
+      return res;
+    };
+  }
+
+  // ====== MINI GANTT (Línea de tiempo) ======
+  function buildTimeline(){
+    const wrap = $("#timelineWrap"), rows = $("#timelineRows"), scale = $("#timeScale");
+    if(!wrap || !rows) return;
+    const list = (window._lastRenderedList || window.tasks || []).filter(t=> t && t.fecha && t.deadline);
+    if(!list.length){ rows.innerHTML = '<div style="opacity:.7">Sin tareas con fechas completas.</div>'; scale.textContent=''; return; }
+    const dates = list.flatMap(t=> [parseDate(t.fecha), parseDate(t.deadline)]).filter(Boolean);
+    const min = new Date(Math.min.apply(null, dates));
+    const max = new Date(Math.max.apply(null, dates));
+    const totalDays = Math.max(1, (max - min)/86400000);
+    scale.textContent = `Escala: ${min.toISOString().slice(0,10)} → ${max.toISOString().slice(0,10)} (${Math.round(totalDays)} días)`;
+    rows.innerHTML = '';
+    list.forEach(t=>{
+      const s = parseDate(t.fecha), e = parseDate(t.deadline);
+      if(!s || !e) return;
+      const startPct = Math.max(0, ((s - min)/86400000) / totalDays * 100);
+      const durPct = Math.max(1, ((e - s)/86400000) / totalDays * 100);
+      const row = document.createElement('div'); row.className='time-row';
+      row.innerHTML = `<div class="time-label" title="${t.titulo}">${t.titulo}</div>
+        <div class="time-bar"><span style="left:${startPct}%; width:${durPct}%"></span></div>`;
+      rows.appendChild(row);
+    });
+  }
+  document.addEventListener('click', function(ev){
+    if(ev.target && ev.target.id==='btnToggleTimeline'){
+      const w = $("#timelineWrap");
+      if(!w) return;
+      const show = (w.style.display!=='block');
+      w.style.display = show ? 'block' : 'none';
+      if(show) buildTimeline();
+    }
+    if(ev.target && ev.target.id==='btnExportLog'){
+      // Exportar bitácora extendida
+      try{
+        const LOG = JSON.parse(localStorage.getItem(KEYS.LOG)||'[]');
+        const blob = new Blob([JSON.stringify(LOG,null,2)], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'CUBOi_Log_'+new Date().toISOString().slice(0,10)+'.json';
+        document.body.appendChild(a); a.click();
+        setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+      }catch(e){ alert('No hay log disponible'); }
+    }
+  });
+
+  // ====== BITÁCORA EXTENDIDA ======
+  let LOG=[]; try{ LOG=JSON.parse(localStorage.getItem(KEYS.LOG)||'[]'); }catch(e){ LOG=[]; }
+  function log(evt, payload){ LOG.push({ts:new Date().toISOString(), evt, payload}); try{ localStorage.setItem(KEYS.LOG, JSON.stringify(LOG)); }catch(e){} }
+
+  if(typeof window.addTask === 'function'){
+    const _add2 = window.addTask;
+    window.addTask = function(){
+      const before = (window.tasks||[]).length;
+      const r = _add2.apply(this, arguments);
+      try{
+        const arr=(window.tasks||[]);
+        if(arr && arr.length===before+1){
+          const t=arr[arr.length-1];
+          log('create', {id:t.id, titulo:t.titulo, area:t.area, subarea:t.subarea, prio:t.prio, tags:t.tags||[]});
+        }
+      }catch(e){}
+      return r;
+    };
+  }
+  if(typeof window.move === 'function'){
+    const _move = window.move;
+    window.move = function(id, estado){
+      const r = _move.apply(this, arguments);
+      try{ log('status', {id, estado}); }catch(e){}
+      return r;
+    };
+  }
+  if(typeof window.toggleArchive === 'function'){
+    const _arch = window.toggleArchive;
+    window.toggleArchive = function(id){
+      const r = _arch.apply(this, arguments);
+      try{ log('archive', {id}); }catch(e){}
+      return r;
+    };
+  }
+  // Si existe un guardado/edición explícito
+  if(typeof window.save === 'function'){
+    const _save = window.save;
+    window.save = function(){
+      const r = _save.apply(this, arguments);
+      try{ log('save', {count:(window.tasks||[]).length}); }catch(e){}
+      return r;
+    };
+  }
+
+  // ====== Hooks de render ======
+  (function(){
+    const _render = window.render;
+    window.render = function(){
+      const res = _render ? _render.apply(this, arguments) : undefined;
+      try{ renderMetrics(); }catch(e){}
+      try{ renderTagsOnCards(); }catch(e){}
+      try{ refreshTagFilterOptions(); }catch(e){}
+      try{ if($('#fTag')) $('#fTag').onchange = filterByTag; }catch(e){}
+      return res;
+    };
+  })();
+
+  // Inicial
+  try{ if(typeof window.render==='function') window.render(); }catch(e){}
+})();
+</script>
+
+
+<!-- Etiqueta de versión oficial -->
+<div id="oficial-version" class="no-print" style="position:fixed;right:12px;bottom:10px;opacity:.7;font-size:12px;background:#0f172a;color:#e5e7eb;padding:6px 10px;border-radius:8px;border:1px solid #24324a;z-index:9999;">Versión oficial: <b>Tareas_Oficial_v8.13_EP</b></div>
+
+<script>
+(function(){
+  const $ = (s,ctx)=> (ctx||document).querySelector(s);
+  const $$ = (s,ctx)=> Array.from((ctx||document).querySelectorAll(s));
+  const KEY_TASKS = 'cuboi_v88_real_tasks';
+
+  function ensureArrays(){
+    if(!window.tasks) window.tasks = [];
+    if(!Array.isArray(window.tasks)) window.tasks = [];
+  }
+  function saveSafe(){
+    try{
+      if(typeof window.save === 'function'){ window.save(); }
+      else{
+        localStorage.setItem(KEY_TASKS, JSON.stringify(window.tasks||[]));
+      }
+    }catch(e){ console.warn('No se pudo guardar en localStorage:', e); }
+  }
+  function renderSafe(){
+    try{ if(typeof window.render === 'function') window.render(); }catch(e){}
+  }
+
+  function norm(s){ return (s||'').toString().trim().toLowerCase(); }
+  function keyTitleDate(t){
+    const kTitle = norm(t.titulo||t.title||'');
+    const kFecha = (t.deadline || t.fecha || t.fechaInicio || '').toString().slice(0,10);
+    return kTitle + '|' + kFecha;
+  }
+
+  function mergeTasks(imported, avoidDup){
+    ensureArrays();
+    const arr = Array.isArray(imported) ? imported : [];
+    if(!arr.length) return {added:0, skipped:0, dedup:0};
+
+    const existingById = new Map();
+    const existingByKey = new Set();
+    (window.tasks||[]).forEach(t=>{
+      const id = String(t.id);
+      existingById.set(id, true);
+      if(avoidDup) existingByKey.add(keyTitleDate(t));
+    });
+
+    let added=0, skipped=0, dedup=0;
+    arr.forEach((t,idx)=>{
+      if(!t || typeof t!=='object'){ skipped++; return; }
+
+      // Detección de duplicados por título+fecha si está activo
+      if(avoidDup){
+        const K = keyTitleDate(t);
+        if(existingByKey.has(K)){ dedup++; return; }
+        existingByKey.add(K);
+      }
+
+      // Evitar choque de IDs
+      let id = (t.id!=null)? String(t.id) : null;
+      if(!id || existingById.has(id)){
+        id = Date.now().toString() + '_' + idx;
+      }
+      const copy = Object.assign({}, t, { id });
+      (window.tasks||[]).push(copy);
+      existingById.set(id, true);
+      added++;
+    });
+
+    saveSafe();
+    renderSafe();
+    return {added, skipped, dedup};
+  }
+
+  function handleFile(file){
+    const reader = new FileReader();
+    reader.onload = function(){
+      try{
+        const data = JSON.parse(reader.result || '[]');
+        const avoidDup = !!($('#impNoDup') && $('#impNoDup').checked);
+        const stats = mergeTasks(data, avoidDup);
+        alert('Importación completada. Agregadas: '+stats.added+' · Saltadas inválidas: '+stats.skipped+' · Evitadas por duplicado: '+stats.dedup);
+      }catch(e){
+        alert('Archivo JSON inválido: ' + e.message);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  document.addEventListener('click', function(ev){
+    if(ev.target && ev.target.id==='btnImportJson'){
+      const i = $('#impJson'); if(i) i.click();
+    }
+  });
+  document.addEventListener('change', function(ev){
+    if(ev.target && ev.target.id==='impJson' && ev.target.files && ev.target.files[0]){
+      handleFile(ev.target.files[0]);
+      ev.target.value = '';
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
